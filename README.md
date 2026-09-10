@@ -40,6 +40,19 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Scheduled recommendations
+
+Vercel calls `GET /api/cron/recommendations` every Sunday and Wednesday at 13:00 UTC, which is 5:00 AM Pacific Standard Time. Vercel cron expressions use UTC and do not automatically shift for daylight saving time, so this runs at 6:00 AM Pacific Daylight Time.
+
+Set `CRON_SECRET` in the Vercel project environment. Vercel includes it as a bearer token when calling the route. You can trigger the same endpoint locally with:
+
+```bash
+curl --header "Authorization: Bearer $CRON_SECRET" \
+  http://localhost:3000/api/cron/recommendations
+```
+
+The job creates a scheduled recommendation batch for every profile that has liked at least one movie. Profiles with an active generation are skipped, and failures for one profile do not prevent the remaining profiles from being processed.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

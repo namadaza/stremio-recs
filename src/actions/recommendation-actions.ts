@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { getOrCreateProfile } from "@/services/profile-service";
 import {
+  addMovieToCurrentRecommendationBatch,
   generateAndSaveRecommendations,
   getCurrentRecommendations,
   getRecommendationBatchHistory,
@@ -39,6 +40,15 @@ export async function getCurrentRecommendationSelection() {
 export async function refreshRecommendations() {
   const profile = await requireProfile();
   return toRecommendationDto(await generateAndSaveRecommendations(profile.id));
+}
+
+export async function addMovieToCurrentBatch(tmdbId: number) {
+  if (!Number.isInteger(tmdbId) || tmdbId <= 0) throw new Error("Invalid TMDB movie ID");
+
+  const profile = await requireProfile();
+  return toRecommendationDto(
+    await addMovieToCurrentRecommendationBatch(profile.id, tmdbId),
+  );
 }
 
 export async function getRecommendationHistory() {

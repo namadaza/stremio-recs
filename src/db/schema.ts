@@ -56,6 +56,7 @@ export type RecommendationData = {
   reason: string;
   score?: number;
   signals?: string[];
+  source?: "generated" | "manual";
 };
 
 export type FeedbackData = {

@@ -13,7 +13,7 @@ export function SignOutButton() {
       type="button"
       onClick={async () => {
         await authClient.signOut();
-        router.push("/login");
+        router.push("/");
         router.refresh();
       }}
       className="flex items-center gap-2 text-[10px] tracking-[0.16em] text-stone-500 uppercase transition hover:text-stone-200"

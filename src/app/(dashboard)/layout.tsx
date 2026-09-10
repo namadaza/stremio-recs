@@ -8,7 +8,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { auth } from "@/lib/auth";
 
 const navigation = [
-  { href: "/", label: "This week", icon: Compass },
+  { href: "/recommendations", label: "This week", icon: Compass },
   { href: "/search", label: "Search", icon: Search },
   { href: "/algorithm", label: "Your algorithm", icon: SlidersHorizontal },
   { href: "/history", label: "Archive", icon: Clock3 },
@@ -19,6 +19,9 @@ const navigation = [
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await auth.api.getSession({ headers: await headers() });
 
+  // Keep the protected-route fallback distinct from the authenticated home
+  // redirect. Sending this back to `/` can create a `/` ↔ `/recommendations`
+  // loop if the two requests briefly observe different session state.
   if (!session?.user) redirect("/login");
 
   return (

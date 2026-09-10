@@ -95,6 +95,7 @@ export async function saveMovieReaction(
           : undefined,
         releaseDate: movie.release_date || undefined,
         language: movie.original_language,
+        rating: movie.vote_average,
       },
     })
     .onConflictDoUpdate({
@@ -111,6 +112,7 @@ export async function saveMovieReaction(
             : undefined,
           releaseDate: movie.release_date || undefined,
           language: movie.original_language,
+          rating: movie.vote_average,
         },
       },
     })

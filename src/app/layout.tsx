@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Taste — Curated Stremio Recommendations",
   description:
-    "A private, considered selection of films and series shaped by your Stremio taste. Coming soon.",
+    "A private, considered selection of films and series shaped by your Stremio taste.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

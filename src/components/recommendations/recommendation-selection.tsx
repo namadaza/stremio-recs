@@ -227,7 +227,8 @@ function RecommendationCard({
         </span>
         <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black via-black/75 to-transparent p-5 pt-24">
           <p className="text-[9px] tracking-[0.2em] text-amber-100/55 uppercase">
-            {movie.exploration[0]} · {year} · {movie.language}
+            {movie.source === "manual" ? "Added by you" : movie.exploration[0]} · {year}
+            {movie.language ? ` · ${movie.language}` : ""}
           </p>
           <h2 className="mt-2 font-heading text-2xl italic text-stone-50">{movie.title}</h2>
           <p className="mt-3 line-clamp-3 text-xs leading-5 text-stone-400">

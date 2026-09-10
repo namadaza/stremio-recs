@@ -1,6 +1,15 @@
 import "server-only";
 
 const TMDB_API_URL = "https://api.themoviedb.org/3";
+const TMDB_REQUEST_TIMEOUT_MS = 10_000;
+const TMDB_MAX_ATTEMPTS = 3;
+const TMDB_MAX_CONCURRENT_REQUESTS = 4;
+const TMDB_DEFAULT_RETRY_MS = 1_000;
+const TMDB_MAX_RETRY_MS = 10_000;
+
+let activeRequests = 0;
+let rateLimitedUntil = 0;
+const requestWaiters: Array<() => void> = [];
 
 export type TmdbMovie = {
   adult: boolean;
@@ -57,30 +66,121 @@ export type TmdbDiscoverMoviesOptions = {
   minimumVoteCount?: number;
 };
 
+export class TmdbRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status?: number,
+    readonly retryable = false,
+  ) {
+    super(message);
+    this.name = "TmdbRequestError";
+  }
+}
+
 function getApiKey() {
-  const apiKey = process.env.TMBD_API_KEY;
+  // Keep supporting the original misspelled variable while accepting TMDB's name.
+  const apiKey = process.env.TMDB_API_KEY ?? process.env.TMBD_API_KEY;
 
   if (!apiKey) {
-    throw new Error("TMBD_API_KEY is not configured");
+    throw new Error("TMDB_API_KEY (or legacy TMBD_API_KEY) is not configured");
   }
 
   return apiKey;
 }
 
-async function requestTmdb<T>(url: URL) {
-  url.searchParams.set("api_key", getApiKey());
+function sleep(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
 
-  const response = await fetch(url, {
-    headers: { accept: "application/json" },
-    cache: "no-store",
-    signal: AbortSignal.timeout(15_000),
-  });
-
-  if (!response.ok) {
-    throw new Error(`TMDB request failed with status ${response.status}`);
+async function acquireRequestSlot() {
+  if (activeRequests < TMDB_MAX_CONCURRENT_REQUESTS) {
+    activeRequests += 1;
+    return;
   }
 
-  return (await response.json()) as T;
+  // A released slot is transferred directly to the next waiter.
+  await new Promise<void>((resolve) => requestWaiters.push(resolve));
+}
+
+function releaseRequestSlot() {
+  const next = requestWaiters.shift();
+  if (next) next();
+  else activeRequests -= 1;
+}
+
+function retryDelay(response: Response, attempt: number) {
+  const retryAfter = response.headers.get("retry-after");
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds)) return Math.min(seconds * 1_000, TMDB_MAX_RETRY_MS);
+
+    const dateDelay = Date.parse(retryAfter) - Date.now();
+    if (Number.isFinite(dateDelay)) return Math.min(Math.max(dateDelay, 0), TMDB_MAX_RETRY_MS);
+  }
+
+  return Math.min(TMDB_DEFAULT_RETRY_MS * 2 ** attempt, TMDB_MAX_RETRY_MS);
+}
+
+function updateRateLimitWindow(response: Response) {
+  const remainingHeader = response.headers.get("x-ratelimit-remaining");
+  const resetHeader = response.headers.get("x-ratelimit-reset");
+  if (!remainingHeader || !resetHeader) return;
+
+  const remaining = Number(remainingHeader);
+  const reset = Number(resetHeader);
+  if (remaining === 0 && Number.isFinite(reset)) {
+    // TMDB-style reset headers are epoch seconds.
+    rateLimitedUntil = Math.max(rateLimitedUntil, reset * 1_000);
+  }
+}
+
+async function requestTmdb<T>(url: URL) {
+  url.searchParams.set("api_key", getApiKey());
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < TMDB_MAX_ATTEMPTS; attempt += 1) {
+    await acquireRequestSlot();
+    try {
+      const waitForRateLimit = rateLimitedUntil - Date.now();
+      if (waitForRateLimit > 0) await sleep(Math.min(waitForRateLimit, TMDB_MAX_RETRY_MS));
+
+      const response = await fetch(url, {
+        headers: { accept: "application/json" },
+        cache: "no-store",
+        signal: AbortSignal.timeout(TMDB_REQUEST_TIMEOUT_MS),
+      });
+      updateRateLimitWindow(response);
+
+      if (response.ok) return (await response.json()) as T;
+
+      const retryable = response.status === 408 || response.status === 429 || response.status >= 500;
+      const delay = retryDelay(response, attempt);
+      if (response.status === 429) rateLimitedUntil = Math.max(rateLimitedUntil, Date.now() + delay);
+
+      const error = new TmdbRequestError(
+        `TMDB request failed with status ${response.status}`,
+        response.status,
+        retryable,
+      );
+      if (!retryable || attempt === TMDB_MAX_ATTEMPTS - 1) throw error;
+      lastError = error;
+      await sleep(delay);
+    } catch (error) {
+      if (error instanceof TmdbRequestError && !error.retryable) throw error;
+      lastError = error;
+      if (attempt === TMDB_MAX_ATTEMPTS - 1) break;
+      await sleep(Math.min(TMDB_DEFAULT_RETRY_MS * 2 ** attempt, TMDB_MAX_RETRY_MS));
+    } finally {
+      releaseRequestSlot();
+    }
+  }
+
+  const timedOut = lastError instanceof Error && lastError.name === "TimeoutError";
+  throw new TmdbRequestError(
+    timedOut ? "TMDB request timed out after retries" : "TMDB request failed after retries",
+    lastError instanceof TmdbRequestError ? lastError.status : undefined,
+    true,
+  );
 }
 
 export async function searchTmdbMovies(query: string, page = 1) {
@@ -135,16 +235,10 @@ export async function discoverTmdbMovies(options: TmdbDiscoverMoviesOptions = {}
     url.searchParams.set("with_original_language", options.originalLanguage);
   }
   if (options.releaseYear?.from) {
-    url.searchParams.set(
-      "primary_release_date.gte",
-      `${options.releaseYear.from}-01-01`,
-    );
+    url.searchParams.set("primary_release_date.gte", `${options.releaseYear.from}-01-01`);
   }
   if (options.releaseYear?.to) {
-    url.searchParams.set(
-      "primary_release_date.lte",
-      `${options.releaseYear.to}-12-31`,
-    );
+    url.searchParams.set("primary_release_date.lte", `${options.releaseYear.to}-12-31`);
   }
   if (options.minimumVoteCount) {
     url.searchParams.set("vote_count.gte", String(options.minimumVoteCount));
