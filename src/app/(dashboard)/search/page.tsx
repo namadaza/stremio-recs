@@ -11,7 +11,7 @@ export default function SearchPage() {
       </h1>
       <p className="mt-5 max-w-2xl text-sm leading-7 text-stone-500">
         Browse quick recommendations shaped by recent likes, long-time favorites, or a wildcard
-        mood—or search TMDB directly. Like, dislike, or add any film to your current selection.
+        mood, or search TMDB directly. Like, dislike, or add any film to your current selection.
       </p>
       <MovieSearch />
     </section>
