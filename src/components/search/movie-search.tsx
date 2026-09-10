@@ -256,11 +256,9 @@ export function MovieSearch() {
         )}
       </section>
 
-      <div className="mt-14 pt-2">
-        <p className="text-[10px] tracking-[0.2em] text-amber-100/55 uppercase">
-          Search the catalog
-        </p>
-        <form onSubmit={submitSearch} className="mt-5 flex max-w-3xl gap-2">
+      <div className="mt-8">
+        <p className="text-xs leading-6 text-stone-600">Search the catalog directly.</p>
+        <form onSubmit={submitSearch} className="mt-3 flex max-w-3xl gap-2">
           <label className="relative min-w-0 flex-1">
             <span className="sr-only">Search for a movie</span>
             <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-stone-600" />
