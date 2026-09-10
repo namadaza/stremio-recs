@@ -1,4 +1,6 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Taste
+
+Taste is a personalized movie recommendation service delivered as a private Stremio catalog. The app uses Next.js, Better Auth, Neon Postgres, Drizzle, TanStack Query, and the Stremio Add-on SDK.
 
 ## Getting Started
 
@@ -13,6 +15,15 @@ pnpm dev
 # or
 bun dev
 ```
+
+Copy `.env.example` to `.env.local`, connect a Neon database, and push the current schema directly:
+
+```bash
+cp .env.example .env.local
+pnpm db:push
+```
+
+This project intentionally uses a push-only Drizzle workflow and does not generate or run migration files. The `db:push` script reads `DATABASE_URL` from `.env.local`.
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
