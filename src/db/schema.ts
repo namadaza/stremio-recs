@@ -36,12 +36,17 @@ export type MovieData = {
   genres?: string[];
   runtimeMinutes?: number;
   language?: string;
+  rating?: number;
 };
 
 export type RecommendationBatchData = {
   model?: string;
   promptVersion?: string;
   candidateCount?: number;
+  seed?: string;
+  sampledMovieIds?: number[];
+  inputTokens?: number;
+  outputTokens?: number;
   error?: string;
 };
 
@@ -52,7 +57,7 @@ export type RecommendationData = {
 };
 
 export type FeedbackData = {
-  source?: "feed" | "history" | "stremio";
+  source?: "feed" | "history" | "search" | "stremio";
   note?: string;
 };
 

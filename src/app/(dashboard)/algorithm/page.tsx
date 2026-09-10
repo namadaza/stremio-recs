@@ -1,3 +1,5 @@
+import { MovieReactions } from "@/components/algorithm/movie-reactions";
+
 export default function AlgorithmPage() {
   return (
     <section className="mx-auto w-full max-w-6xl">
@@ -8,14 +10,10 @@ export default function AlgorithmPage() {
         Define your algorithm.
       </h1>
       <p className="mt-5 max-w-xl text-sm leading-7 text-stone-500">
-        Choose the genres, eras, languages, and degree of discovery that shape each weekly
-        selection.
+        Every reaction becomes a signal. Review the films guiding your recommendations and the
+        ones steering them away.
       </p>
-      <div className="mt-10 min-h-64 max-w-3xl border border-dashed border-white/10 bg-white/[0.015] p-6 sm:p-8">
-        <p className="text-xs tracking-[0.14em] text-stone-700 uppercase">
-          Configuration controls coming next
-        </p>
-      </div>
+      <MovieReactions />
     </section>
   );
 }
