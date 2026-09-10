@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { Clock3, Compass, Search, SlidersHorizontal, Tv } from "lucide-react";
+import { Clock3, Compass, Search, Settings, SlidersHorizontal, Tv } from "lucide-react";
 
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { auth } from "@/lib/auth";
@@ -13,6 +13,7 @@ const navigation = [
   { href: "/algorithm", label: "Your algorithm", icon: SlidersHorizontal },
   { href: "/history", label: "Archive", icon: Clock3 },
   { href: "/installation", label: "Install add-on", icon: Tv },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {

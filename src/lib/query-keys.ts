@@ -1,5 +1,6 @@
 export const QUERY_KEYS = {
   profile: ["profile"] as const,
+  settings: ["settings"] as const,
   recommendationConfig: ["recommendation-config"] as const,
   recommendations: {
     all: ["recommendations"] as const,

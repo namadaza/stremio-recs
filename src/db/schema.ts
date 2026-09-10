@@ -12,6 +12,8 @@ import {
 
 export type ProfileData = {
   displayName?: string;
+  firstName?: string;
+  lastName?: string;
   onboardingCompleted?: boolean;
   nextRefreshAt?: string;
 };
